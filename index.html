@@ -232,7 +232,7 @@
   <!-- HERO -->
   <section class="hero-sec">
     <div class="wrap hero-in">
-      <div class="hstatus"><span class="hdot"></span><span>LIVE NOW</span><span>UTC 14:32</span><span class="alert">▲ 3 things worth knowing</span></div>
+      <div class="hstatus"><span class="hdot"></span><span>LIVE NOW</span><span id="hclock">UTC --:--:--</span><span class="alert">▲ 3 things worth knowing</span></div>
       <h1>By the time it's news,<br><span>you already knew.</span></h1>
       <p class="tagline">The whole world on one live map — crypto, markets, AI, weather, world news — so you catch it before the news does.</p>
       <div class="hero-cta">
@@ -242,13 +242,7 @@
     </div>
     <canvas class="heroglobe" id="heroglobe" aria-hidden="true"></canvas>
     <div class="hticker">
-      <div class="wrap">
-        <span>BTC <b>$67,410</b></span>
-        <span>ETH <b>$3,540</b></span>
-        <span>S&amp;P <b>+0.3%</b></span>
-        <span>AI INDEX <b>▲ hot</b></span>
-        <span>GOLD <b>$2,410</b></span>
-      </div>
+      <div class="wrap" id="hticker-wrap"><span>BTC <b>$—</b></span><span>ETH <b>$—</b></span><span>SOL <b>$—</b></span></div>
     </div>
   </section>
 
@@ -599,5 +593,27 @@ alerts = wm.<span class="kw">query</span>(
   if(reduce){ if(lm)(pvMode==='globe'?pvGlobe:pvFlat).draw(0); if(hero)hero.draw(0); } else raf=requestAnimationFrame(frame);
   function loadLive(){ try{ var cfg=window.WM_SUPABASE; if(!(cfg&&cfg.url&&window.supabase))return; var sb=window.supabase.createClient(cfg.url,cfg.anon); sb.from('events').select('cat,lon,lat').order('t',{ascending:false}).limit(45).then(function(res){ if(res&&res.data&&res.data.length){ PINS.length=0; res.data.forEach(function(r){ if(CAT[r.cat]) PINS.push({lon:+r.lon,lat:+r.lat,cat:r.cat}); }); if(reduce){ if(lm)(pvMode==='globe'?pvGlobe:pvFlat).draw(0); if(hero)hero.draw(0); } } }).catch(function(){}); }catch(e){} }
   loadLive();
+})();
+</script>
+<script>
+(function(){
+  var clk=document.getElementById('hclock');
+  function z(n){return (n<10?'0':'')+n;}
+  function tick(){ if(!clk)return; var d=new Date(); clk.textContent='UTC '+z(d.getUTCHours())+':'+z(d.getUTCMinutes())+':'+z(d.getUTCSeconds()); }
+  tick(); setInterval(tick,1000);
+  var wrap=document.getElementById('hticker-wrap');
+  var COINS=[['bitcoin','BTC'],['ethereum','ETH'],['solana','SOL'],['binancecoin','BNB'],['ripple','XRP']];
+  function fmt(n){ return n>=1000 ? '$'+Math.round(n).toLocaleString('en-US') : '$'+n.toFixed(2); }
+  function loadTicker(){
+    if(!wrap)return;
+    var ids=COINS.map(function(c){return c[0];}).join(',');
+    fetch('https://api.coingecko.com/api/v3/simple/price?ids='+ids+'&vs_currencies=usd&include_24hr_change=true')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var html=COINS.map(function(c){ var o=d[c[0]]; if(!o)return ''; var ch=o.usd_24h_change||0; var up=ch>=0; var col=up?'var(--pos)':'var(--neg)'; return '<span>'+c[1]+' <b>'+fmt(o.usd)+'</b> <i style="color:'+col+';font-size:11px;font-style:normal">'+(up?'▲':'▼')+Math.abs(ch).toFixed(1)+'%</i></span>'; }).join('');
+        if(html) wrap.innerHTML=html;
+      }).catch(function(){});
+  }
+  loadTicker(); setInterval(loadTicker, 60000);
 })();
 </script>
