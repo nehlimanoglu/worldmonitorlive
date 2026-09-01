@@ -76,7 +76,12 @@ async function gdelt(): Promise<Row[]> {
     const q = encodeURIComponent(Deno.env.get("GDELT_QUERY") ?? "(protest OR clash OR strike OR election OR earthquake OR flood OR wildfire OR outage OR attack OR ceasefire)");
     const span = encodeURIComponent(Deno.env.get("GDELT_TIMESPAN") ?? "30min");
     const url = `https://api.gdeltproject.org/api/v2/geo/geo?query=${q}&mode=PointData&format=GeoJSON&timespan=${span}`;
-    const txt = await (await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 WorldMonitor/1.0" } })).text();
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 15000);
+    let txt: string;
+    try {
+      txt = await (await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 WorldMonitor/1.0" }, signal: ac.signal })).text();
+    } finally { clearTimeout(to); }
     let j: any; try { j = JSON.parse(txt); } catch { return []; }
     return (j.features ?? []).slice(0, 40)
       .filter((f: any) => f.geometry?.coordinates)
@@ -139,17 +144,23 @@ async function finnhub(): Promise<Row[]> {
   } catch (e) { console.error("finnhub", (e as Error).message); return []; }
 }
 
-Deno.serve(async () => {
+async function ingestAll(): Promise<number> {
   const results = await Promise.allSettled([usgs(), gdelt(), hn(), cryptoRss(), finnhub()]);
   const rows: Row[] = results.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
-  const byCat: Record<string, number> = {};
-  rows.forEach((r) => { byCat[r.cat] = (byCat[r.cat] ?? 0) + 1; });
-
   if (rows.length) {
     const { error } = await supa.from("events").upsert(rows, { onConflict: "key", ignoreDuplicates: true });
     if (error) console.error("upsert", error.message);
   }
-  return new Response(JSON.stringify({ ok: true, fetched: rows.length, byCat }), {
+  console.log("ingested", rows.length);
+  return rows.length;
+}
+
+Deno.serve(() => {
+  // Return immediately so pg_net (5s default timeout) succeeds; finish the work in the
+  // background. Fetching all sources (GDELT/RSS) takes longer than 5s.
+  // @ts-ignore EdgeRuntime is provided by the Supabase Edge runtime
+  EdgeRuntime.waitUntil(ingestAll());
+  return new Response(JSON.stringify({ ok: true, started: true }), {
     headers: { "content-type": "application/json" },
   });
 });
