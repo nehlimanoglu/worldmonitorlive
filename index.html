@@ -3,6 +3,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
 
 <style>
   /* ===== TOKENS — Arctic White (dark default) ===== */
@@ -595,5 +597,7 @@ alerts = wm.<span class="kw">query</span>(
   var raf=null; function frame(ts){ if(lm)(pvMode==='globe'?pvGlobe:pvFlat).draw(ts); if(hero)hero.draw(ts); raf=requestAnimationFrame(frame); }
   window.addEventListener('resize',resizeAll); resizeAll();
   if(reduce){ if(lm)(pvMode==='globe'?pvGlobe:pvFlat).draw(0); if(hero)hero.draw(0); } else raf=requestAnimationFrame(frame);
+  function loadLive(){ try{ var cfg=window.WM_SUPABASE; if(!(cfg&&cfg.url&&window.supabase))return; var sb=window.supabase.createClient(cfg.url,cfg.anon); sb.from('events').select('cat,lon,lat').order('t',{ascending:false}).limit(45).then(function(res){ if(res&&res.data&&res.data.length){ PINS.length=0; res.data.forEach(function(r){ if(CAT[r.cat]) PINS.push({lon:+r.lon,lat:+r.lat,cat:r.cat}); }); if(reduce){ if(lm)(pvMode==='globe'?pvGlobe:pvFlat).draw(0); if(hero)hero.draw(0); } } }).catch(function(){}); }catch(e){} }
+  loadLive();
 })();
 </script>
