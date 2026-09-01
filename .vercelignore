@@ -1,0 +1,6 @@
+news-backend
+stripe-checkout-backend
+supabase
+*.sql
+SUPABASE-SETUP.md
+node_modules
