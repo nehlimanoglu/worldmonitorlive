@@ -1,0 +1,547 @@
+<title>World Monitor Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  /* ===== Arctic White (dark default) ===== */
+  :root{
+    --bg:#070809; --bg2:#0e1113; --bg3:#141719;
+    --bright:#f5f9fb; --text:#c3ccd1; --dim:#828d92; --faint:#555e63;
+    --line:rgba(223,232,235,.13); --line2:rgba(223,232,235,.24);
+    --accent:#ffb020; --accent-ink:#0a0c0d;
+    --pos:#7cc493; --neg:#e5806a; --glow:210,228,235; --shadow:rgba(0,0,0,.6);
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#eef1f2; --bg2:#f6f8f9; --bg3:#fbfcfd;
+      --bright:#0f1517; --text:#333a3d; --dim:#636a6e; --faint:#98a0a4;
+      --line:rgba(15,20,22,.13); --line2:rgba(15,20,22,.24);
+      --accent:#a8641c; --accent-ink:#fdfefe;
+      --pos:#2f7d52; --neg:#b0442c; --glow:15,20,22; --shadow:rgba(20,30,35,.16);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#eef1f2; --bg2:#f6f8f9; --bg3:#fbfcfd;
+    --bright:#0f1517; --text:#333a3d; --dim:#636a6e; --faint:#98a0a4;
+    --line:rgba(15,20,22,.13); --line2:rgba(15,20,22,.24);
+    --accent:#a8641c; --accent-ink:#fdfefe;
+    --pos:#2f7d52; --neg:#b0442c; --glow:15,20,22; --shadow:rgba(20,30,35,.16);
+  }
+  :root[data-theme="dark"]{
+    --bg:#070809; --bg2:#0e1113; --bg3:#141719;
+    --bright:#f5f9fb; --text:#c3ccd1; --dim:#828d92; --faint:#555e63;
+    --line:rgba(223,232,235,.13); --line2:rgba(223,232,235,.24);
+    --accent:#ffb020; --accent-ink:#0a0c0d;
+    --pos:#7cc493; --neg:#e5806a; --glow:210,228,235; --shadow:rgba(0,0,0,.6);
+  }
+
+  *{box-sizing:border-box; margin:0}
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important} }
+  body{background:var(--bg); color:var(--text); font-family:"Newsreader",Georgia,serif; -webkit-font-smoothing:antialiased; min-height:100vh; transition:background .3s,color .3s}
+  .mono{font-family:"JetBrains Mono",monospace}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+  .top{position:sticky; top:0; z-index:20; background:color-mix(in srgb,var(--bg) 88%, transparent); backdrop-filter:blur(10px); border-bottom:1px solid var(--line)}
+  .top-in{max-width:560px; margin:0 auto; padding:13px clamp(16px,4vw,22px); display:flex; align-items:center; gap:14px}
+  .back{font-family:"JetBrains Mono",monospace; font-size:18px; line-height:1; background:transparent; border:0; color:var(--dim); cursor:pointer; padding:4px; visibility:hidden}
+  .back:hover{color:var(--bright)}
+  .brand{font-family:"JetBrains Mono",monospace; font-weight:700; letter-spacing:.12em; color:var(--bright); font-size:12.5px; white-space:nowrap}
+  .brand b{color:var(--accent)}
+  .barwrap{flex:1; display:flex; flex-direction:column; gap:5px}
+  .bar{height:4px; border-radius:100px; background:var(--line); overflow:hidden}
+  .bar i{display:block; height:100%; width:100%; transform:scaleX(0); transform-origin:left; background:var(--accent); border-radius:100px; transition:transform .4s ease}
+  .bstep{font-family:"IBM Plex Mono",monospace; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint)}
+  .tgl{font-family:"IBM Plex Mono",monospace; font-size:12px; width:30px; height:30px; display:grid; place-items:center; border:1px solid var(--line2); border-radius:7px; background:transparent; color:var(--text); cursor:pointer}
+  .tgl:hover{border-color:var(--accent); color:var(--accent)}
+
+  .stage{max-width:560px; margin:0 auto; padding:clamp(24px,5vw,44px) clamp(16px,4vw,22px) 90px}
+  .screen{display:none; animation:fade .34s ease}
+  .screen.on{display:block}
+  @keyframes fade{from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none}}
+
+  .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); display:inline-flex; align-items:center; gap:8px; margin-bottom:18px}
+  .eyebrow::before{content:""; width:20px; height:1px; background:var(--accent)}
+
+  h1{font-family:"JetBrains Mono",monospace; font-weight:700; font-size:clamp(24px,6vw,34px); line-height:1.09; letter-spacing:-.02em; color:var(--bright); text-wrap:balance}
+  h1 span{color:var(--accent)}
+  .q{font-family:"JetBrains Mono",monospace; font-weight:700; font-size:clamp(20px,4.6vw,26px); line-height:1.16; color:var(--bright); letter-spacing:-.01em; text-wrap:balance; margin-bottom:7px}
+  .qsub{font-size:15px; color:var(--dim); margin-bottom:22px; line-height:1.45}
+  .qsub b{color:var(--text); font-weight:500}
+  .lede{font-size:17px; color:var(--dim); line-height:1.6; margin:16px 0 26px; max-width:46ch}
+  .lede b{color:var(--text); font-weight:500}
+
+  .proof{background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:16px; display:flex; gap:13px; align-items:center; margin-bottom:26px}
+  .proof .av{width:42px; height:42px; border-radius:50%; flex:0 0 auto; background:radial-gradient(circle at 30% 30%, var(--accent), var(--bg3)); display:grid; place-items:center; font-family:"JetBrains Mono",monospace; font-weight:700; color:var(--accent-ink); font-size:15px}
+  .proof .pt{font-size:14px; color:var(--text); line-height:1.4}
+  .proof .pt b{color:var(--bright)}
+  .proof .ph{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--dim); margin-top:3px}
+  .stats{display:flex; gap:22px; margin-bottom:24px; flex-wrap:wrap}
+  .stats .n{font-family:"JetBrains Mono",monospace; font-size:22px; color:var(--bright); font-weight:500}
+  .stats .l{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); margin-top:2px}
+
+  .opts{display:flex; flex-direction:column; gap:11px}
+  .opt{display:flex; align-items:center; gap:14px; width:100%; text-align:left; background:var(--bg2); border:1px solid var(--line2); border-radius:12px; padding:15px 18px; cursor:pointer; color:var(--text); font-family:"Newsreader",serif; font-size:16.5px; transition:.15s}
+  .opt:hover{border-color:var(--accent); transform:translateX(3px)}
+  .opt .em{font-size:21px; flex:0 0 auto; width:26px; text-align:center}
+  .opt .ol{flex:1; color:var(--bright); line-height:1.25}
+  .opt .ck{width:20px; height:20px; border-radius:6px; border:1.5px solid var(--line2); flex:0 0 auto; display:grid; place-items:center; font-family:"JetBrains Mono",monospace; font-size:12px; color:var(--accent-ink)}
+  .opt.sel{border-color:var(--accent); background:var(--bg3)}
+  .opt.sel .ck{background:var(--accent); border-color:var(--accent)}
+  .opt.sel .ck::after{content:"✓"}
+
+  .field{width:100%; font-family:"Newsreader",serif; font-size:18px; color:var(--bright); background:var(--bg2); border:1px solid var(--line2); border-radius:12px; padding:16px 18px; transition:.15s}
+  .field::placeholder{color:var(--faint)}
+  .field:focus{border-color:var(--accent); outline:none}
+  .err{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--neg); margin-top:9px; display:none}
+  .err.on{display:block}
+  .consent{display:flex; gap:11px; align-items:flex-start; margin-top:16px; font-size:13px; color:var(--dim); line-height:1.45; cursor:pointer}
+  .consent input{margin-top:3px; accent-color:var(--accent); width:16px; height:16px; flex:0 0 auto}
+
+  .cont{margin-top:22px; width:100%; font-family:"IBM Plex Mono",monospace; font-size:13px; letter-spacing:.06em; text-transform:uppercase; font-weight:600; background:var(--bright); color:var(--bg); border:0; border-radius:12px; padding:16px; cursor:pointer; transition:.15s}
+  .cont:hover{opacity:.88}
+  .cont[disabled]{opacity:.4; cursor:not-allowed}
+  .btn-o{display:block; text-align:center; text-decoration:none; margin-top:12px; font-family:"IBM Plex Mono",monospace; font-size:13px; letter-spacing:.06em; text-transform:uppercase; border:1px solid var(--line2); color:var(--bright); border-radius:12px; padding:15px; cursor:pointer; background:transparent}
+  .btn-o:hover{border-color:var(--accent); color:var(--accent)}
+  .fineprint{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--faint); text-align:center; margin-top:16px; letter-spacing:.02em; line-height:1.5}
+
+  /* insight */
+  .insight{text-align:left}
+  .bignum{font-family:"JetBrains Mono",monospace; font-size:clamp(40px,11vw,64px); color:var(--accent); font-weight:700; line-height:1; letter-spacing:-.03em; margin:8px 0 10px}
+
+  /* analyzing */
+  .analyzing{text-align:center; padding-top:24px}
+  .radar{width:150px; height:150px; margin:24px auto 28px; position:relative; border-radius:50%; border:1px solid rgba(var(--glow),.2)}
+  .radar::before{content:""; position:absolute; inset:0; border-radius:50%; background:conic-gradient(from 0deg, rgba(var(--glow),.3), transparent 25%); animation:sweep 1.5s linear infinite}
+  .radar::after{content:""; position:absolute; inset:44px; border-radius:50%; border:1px solid rgba(var(--glow),.16)}
+  @keyframes sweep{to{transform:rotate(360deg)}}
+  .alog{font-family:"JetBrains Mono",monospace; font-size:12.5px; color:var(--dim); text-align:left; max-width:330px; margin:0 auto; display:flex; flex-direction:column; gap:11px}
+  .alog div{opacity:.22; transition:opacity .3s; display:flex; gap:10px}
+  .alog div.on{opacity:1; color:var(--text)}
+  .alog div .ok{color:var(--pos)}
+
+  /* profile / watch */
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:20px 0 4px}
+  .pchip{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--text); border:1px solid var(--line2); border-radius:100px; padding:6px 12px; letter-spacing:.02em}
+  .pchip b{color:var(--accent); font-weight:600; margin-right:5px}
+  .rband{background:var(--bg2); border:1px solid var(--line); border-radius:14px; padding:20px; margin:20px 0}
+  .rband h3{font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); margin-bottom:14px; display:flex; justify-content:space-between}
+  .layer{display:flex; align-items:center; gap:12px; padding:10px 0; border-top:1px solid var(--line); font-size:15.5px; color:var(--bright)}
+  .layer:first-of-type{border-top:0}
+  .layer .em{font-size:18px; width:24px; text-align:center}
+  .layer .lx{flex:1}
+  .layer .tag{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--dim)}
+  .watchrow{display:flex; gap:12px; margin:16px 0 4px; flex-wrap:wrap}
+  .wcell{flex:1 1 45%; background:var(--bg2); border:1px solid var(--line); border-radius:12px; padding:14px 16px}
+  .wcell .k{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim)}
+  .wcell .v{font-family:"JetBrains Mono",monospace; font-size:17px; color:var(--bright); font-weight:500; margin-top:6px}
+
+  /* plans */
+  .plans{display:flex; flex-direction:column; gap:12px; margin:22px 0 6px}
+  .plan{border:1px solid var(--line2); border-radius:14px; padding:18px 20px; cursor:pointer; background:var(--bg2); transition:.15s; position:relative}
+  .plan:hover{border-color:var(--accent)}
+  .plan.sel{border-color:var(--accent); background:var(--bg3); box-shadow:0 0 0 1px var(--accent) inset}
+  .plan .ph{display:flex; align-items:baseline; gap:10px}
+  .plan .pnm{font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--bright); font-weight:600}
+  .plan .amt{font-family:"JetBrains Mono",monospace; font-size:22px; color:var(--bright); font-weight:500; margin-left:auto}
+  .plan .amt small{font-size:12px; color:var(--dim)}
+  .plan .pd{font-size:14px; color:var(--dim); margin-top:7px; line-height:1.45}
+  .plan .rec{position:absolute; top:-9px; right:16px; font-family:"IBM Plex Mono",monospace; font-size:9px; letter-spacing:.08em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); padding:3px 9px; border-radius:100px}
+  .save{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--pos); margin-left:8px}
+
+  @media(min-width:600px){ .opt{font-size:17px} }
+</style>
+
+<div class="top">
+  <div class="top-in">
+    <button class="back" id="back" aria-label="Back">←</button>
+    <span class="brand">◆ WORLD<b> MONITOR</b></span>
+    <div class="barwrap"><div class="bar"><i id="bar"></i></div></div>
+    <button class="tgl" id="tgl" aria-label="Theme" title="Arctic White / light">☾</button>
+  </div>
+</div>
+
+<div class="stage">
+
+  <!-- INTRO -->
+  <div class="screen on" id="s-intro">
+    <span class="eyebrow">Build your feed · 60 seconds</span>
+    <h1>Be the one who <span>knew first.</span></h1>
+    <p class="lede">A few quick taps and we'll build your own live world feed — <b>crypto, AI, money, travel, whatever you're into</b> — so you catch it before the group chat does.</p>
+    <div class="stats">
+      <div><div class="n">2M+</div><div class="l">People</div></div>
+      <div><div class="n">190+</div><div class="l">Countries</div></div>
+      <div><div class="n">40 min</div><div class="l">Head start</div></div>
+    </div>
+    <div class="proof">
+      <div class="av">🪙</div>
+      <div><div class="pt"><b>“Caught the AI-chip news before my group chat — felt like a genius.”</b></div><div class="ph mono">— member · very online</div></div>
+    </div>
+    <button class="cont" id="start">Build my feed →</button>
+    <p class="fineprint">Free to start · no card to see your result</p>
+  </div>
+
+  <!-- FLOW (questions + insights) -->
+  <div class="screen" id="s-flow">
+    <div class="mono" id="qcount" style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:14px"></div>
+    <div id="flowbody"></div>
+    <button class="cont" id="flowCont" style="display:none">Continue →</button>
+  </div>
+
+  <!-- ANALYZING -->
+  <div class="screen" id="s-analyze">
+    <div class="analyzing">
+      <span class="eyebrow" style="justify-content:flex-start">Calibrating</span>
+      <h1 id="anHead">Building your surface…</h1>
+      <div class="radar"></div>
+      <div class="alog" id="alog"></div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="screen" id="s-profile">
+    <span class="eyebrow">Your watch is ready</span>
+    <h1 id="pHead">Your World Monitor setup.</h1>
+    <p class="lede" id="pLede" style="margin-bottom:6px"></p>
+    <div class="chips" id="pChips"></div>
+
+    <div class="rband">
+      <h3>Recommended layers <span id="pLayerCount" style="color:var(--dim)"></span></h3>
+      <div id="pLayers"></div>
+    </div>
+    <div class="watchrow" id="pWatch"></div>
+
+    <button class="cont" id="pCont" style="margin-top:24px">Save my watch →</button>
+    <p class="fineprint">Next: where should we send it?</p>
+  </div>
+
+  <!-- EMAIL -->
+  <div class="screen" id="s-email">
+    <span class="eyebrow">Lock it in</span>
+    <div class="q" id="eHead">Save your watch.</div>
+    <div class="qsub" id="eSub">Get your personalized dashboard link plus the daily brief, calibrated to your signals.</div>
+    <input class="field" id="emailInput" type="email" autocomplete="email" inputmode="email" placeholder="you@work.com" aria-label="Email address">
+    <div class="err" id="emailErr">Enter a valid email so we can send your watch.</div>
+    <label class="consent"><input type="checkbox" id="consent"> <span>Email me my watch, the daily brief, and breaking convergence alerts. Unsubscribe anytime.</span></label>
+    <button class="cont" id="emailCont" style="margin-top:20px">Email me my watch →</button>
+    <p class="fineprint">No spam. Your answers only tune the view — nothing is shared.</p>
+  </div>
+
+  <!-- SUBSCRIPTION -->
+  <div class="screen" id="s-subs">
+    <span class="eyebrow">Start your watch</span>
+    <h1 id="sHead">Pick your plan.</h1>
+    <p class="lede" id="sLede" style="margin-bottom:10px"></p>
+    <div class="plans" id="planList"></div>
+    <button class="cont" id="subCont">Start</button>
+    <button class="btn-o" id="subFree">Not now — start free</button>
+    <p class="fineprint">Cancel anytime · 7-day money-back</p>
+  </div>
+
+  <!-- CONFIRM -->
+  <div class="screen" id="s-confirm">
+    <span class="eyebrow">You're on the watch</span>
+    <h1 id="cHead">You're live.</h1>
+    <p class="lede" id="cLede"></p>
+    <div class="rband" id="cSummary"></div>
+    <a href="#" class="cont" id="cCta" style="display:block; text-align:center; text-decoration:none">Launch the dashboard →</a>
+    <button class="btn-o" id="restart">↻ Start over</button>
+    <p class="fineprint" id="cFine"></p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var el=function(id){return document.getElementById(id);};
+
+  /* ---- checkout config ----
+     "backend"  → POST {plan,email} to BACKEND_URL/api/create-checkout-session, redirect to Stripe.
+     "payment_link" → open the Stripe Payment Link directly (works inside sandboxed previews).
+     Backend mode auto-falls back to the Payment Link if the request fails. */
+  var CHECKOUT_MODE="payment_link";                 // switch to "backend" on your deployed site
+  var BACKEND_URL="https://api.worldmonitor.app";   // where stripe-checkout-backend is hosted
+  var STRIPE={                                       // fallback Payment Links (replace REPLACE_*)
+    weekly:"https://buy.stripe.com/REPLACE_WEEKLY",
+    monthly:"https://buy.stripe.com/REPLACE_MONTHLY",
+    yearly:"https://buy.stripe.com/REPLACE_YEARLY"
+  };
+  var DASHBOARD_URL="map.html";
+
+  /* ---------- data ---------- */
+  var Q = {
+    role:{ key:"role", q:"Which sounds most like you?", sub:"So we set everything up around you.",
+      options:[{em:"💸",label:"Everyday investor",value:"investor"},{em:"✈️",label:"Frequent traveler",value:"traveler"},
+               {em:"📰",label:"News follower",value:"follower"},{em:"🏪",label:"Small-business owner",value:"biz"},{em:"🌍",label:"Just curious",value:"curious"}] },
+    goal:{ key:"goal", q:"What are you here for?", sub:"No wrong answer 😌",
+      options:[{em:"💰",label:"Grow (and protect) my money",value:"markets"},{em:"🪙",label:"Catch crypto & AI moves early",value:"hype"},
+               {em:"🧳",label:"Travel & stay safe",value:"security"},{em:"🧠",label:"Actually understand the news",value:"news"}] },
+    domains:{ key:"domains", multi:true, q:"What do you want in your feed?", subFn:function(a){return "Tap everything you're into"+(a.goal?" — "+goalWord(a.goal)+" and more":"")+".";},
+      options:[{em:"🪙",label:"Crypto & memecoins",value:"crypto"},{em:"🤖",label:"AI & big tech",value:"ai"},
+               {em:"📈",label:"Stocks & markets",value:"market"},{em:"🌍",label:"World news & conflict",value:"conflict"},
+               {em:"✈️",label:"Travel & weather",value:"maritime"},{em:"⛽",label:"Prices & energy",value:"energy"}] },
+    regions:{ key:"regions", multi:true, q:"Anywhere in particular?", sub:"We'll center your map and alerts here first.",
+      options:[{em:"🕌",label:"Middle East",value:"me"},{em:"🏰",label:"Europe",value:"eu"},
+               {em:"🐉",label:"Asia-Pacific",value:"indo"},{em:"🦅",label:"The Americas",value:"ams"},
+               {em:"🦁",label:"Africa",value:"afr"},{em:"🗺️",label:"Wherever it happens",value:"glob"}] },
+    today:{ key:"today", q:"How do you keep up today?", sub:"Be honest —",
+      options:[{em:"📱",label:"Scrolling news & social",value:"scroll"},{em:"📺",label:"Paid apps & subscriptions",value:"terminal"},
+               {em:"💬",label:"A bit of everything",value:"mix"},{em:"🫥",label:"I don't really keep up",value:"none"}] },
+    pain:{ key:"pain", q:"What bugs you most about it?", sub:"We built World Monitor against exactly this.",
+      options:[{em:"🐌",label:"I hear about things too late",value:"slow"},{em:"🌪️",label:"Too much noise & panic",value:"noise"},
+               {em:"🧩",label:"It's scattered everywhere",value:"siloed"},{em:"❓",label:"I can't tell what's true",value:"verify"}] },
+    speed:{ key:"speed", q:"How soon do you want to know?", sub:"This sets how often we ping you.",
+      options:[{em:"⚡",label:"The moment it happens",value:"moment"},{em:"⏱️",label:"Within the hour",value:"hour"},{em:"☕",label:"A daily summary is fine",value:"daily"}] },
+    stakes:{ key:"stakes", q:"What's most on the line for you?", sub:"",
+      options:[{em:"💸",label:"My money",value:"money"},{em:"🛟",label:"My safety & my family's",value:"safety"},
+               {em:"📉",label:"Being caught off guard",value:"cred"},{em:"😌",label:"Just peace of mind",value:"fomo"}] },
+    use:{ key:"use", q:"Where will you check it?", sub:"",
+      options:[{em:"💻",label:"On my computer",value:"desktop"},{em:"📲",label:"On my phone",value:"mobile"},{em:"🔌",label:"In my own apps (advanced)",value:"api"}] },
+    alerts:{ key:"alerts", q:"How should we alert you?", sub:"You can change this anytime.",
+      options:[{em:"🎯",label:"Only big, confirmed events",value:"critical"},{em:"🌊",label:"Everything — I'll sort it",value:"all"},{em:"📰",label:"A simple daily digest",value:"brief"}] },
+    team:{ key:"team", q:"Who's it for?", sub:"",
+      options:[{em:"🧍",label:"Just me",value:"solo"},{em:"👨‍👩‍👧",label:"Me, family & friends",value:"team"},{em:"🏪",label:"My business",value:"org"}] },
+    level:{ key:"level", q:"Last one — how closely do you follow world news?", sub:"This tailors your setup.",
+      options:[{em:"🌱",label:"Barely — just the gist",value:"new"},{em:"🧭",label:"Casually",value:"some"},{em:"🦉",label:"Very closely",value:"pro"}] }
+  };
+
+  var STEPS = [
+    {kind:"q", def:Q.role},{kind:"q", def:Q.goal},{kind:"q", def:Q.domains},{kind:"q", def:Q.regions},
+    {kind:"insight", build:insightRegions},
+    {kind:"q", def:Q.today},{kind:"q", def:Q.pain},{kind:"q", def:Q.speed},{kind:"q", def:Q.stakes},
+    {kind:"insight", build:insightRole},
+    {kind:"q", def:Q.use},{kind:"q", def:Q.alerts},{kind:"q", def:Q.team},{kind:"q", def:Q.level}
+  ];
+  var TOTAL_Q = STEPS.filter(function(s){return s.kind==="q";}).length;
+
+  var LAYERS = {
+    crypto:{em:"🪙",label:"Crypto & memecoins",tag:"BTC · ETH · SOL"}, ai:{em:"🤖",label:"AI & big tech",tag:"Launches · Drama"},
+    market:{em:"📈",label:"Stocks & markets",tag:"Indices · FX"}, conflict:{em:"🌍",label:"World news & conflict",tag:"Cross-checked"},
+    maritime:{em:"✈️",label:"Travel & weather",tag:"Flights · Storms"}, infra:{em:"📡",label:"Internet & power",tag:"Outages"},
+    energy:{em:"⛽",label:"Prices & energy",tag:"Fuel · Food"}, space:{em:"🌋",label:"Quakes & weather",tag:"USGS · Storms"},
+    military:{em:"✈️",label:"Air activity",tag:"Live flights"}, news:{em:"📰",label:"Verified breaking",tag:"Cross-checked"}
+  };
+
+  function goalWord(v){return {markets:"your money",hype:"crypto & AI",security:"travel & safety",supply:"prices & costs",news:"the news"}[v]||"your world";}
+  function roleWord(v){return {investor:"investor",traveler:"traveler",follower:"news follower",biz:"business owner",curious:"watcher"}[v]||"you";}
+  function regionWord(v){return {me:"the Middle East",eu:"Europe",indo:"Asia-Pacific",ams:"the Americas",afr:"Africa",glob:"the whole world"}[v]||"your area";}
+  function cadence(v){return {moment:"Real-time push",hour:"Hourly digest",daily:"Daily brief"}[v]||"Daily brief";}
+  function leadTime(a){ if(a.speed==="moment")return "≈ 40 min"; if(a.speed==="hour")return "≈ 25 min"; return "1× / day"; }
+
+  function insightRegions(a){
+    var r=(a.regions&&a.regions[0])||"glob"; var reg=regionWord(r);
+    var num={me:"310k",eu:"420k",indo:"380k",ams:"290k",afr:"140k",glob:"2M"}[r]||"300k";
+    return {big:num+"+", h:"people keep an eye on "+reg+" here.", p:"You'll be watching alongside them — so big changes rarely slip past you."};
+  }
+  function insightRole(a){
+    var t={ investor:{q:"“Caught the AI-rally rotation a day early. This thing pays rent.”",who:"— retail investor"},
+            traveler:{q:"“Knew my route was risky a day before the airline even emailed.”",who:"— frequent flyer"},
+            follower:{q:"“I finally get the news instead of just doom-scrolling it.”",who:"— reader"},
+            biz:{q:"“It warned me about a supplier delay before it hit my orders.”",who:"— shop owner"},
+            curious:{q:"“Now I'm insufferable at dinner parties. Worth it.”",who:"— member · very online"} }[a.role]||{q:"“By the time it's news, you already knew.”",who:"— World Monitor"};
+    return {big:"", h:"People like you, already watching:", quote:t.q, who:t.who,
+            p:"Because what's most on the line for you is "+({money:"your money",safety:"your safety",cred:"not being caught off guard",fomo:"peace of mind"}[a.stakes]||"staying informed")+", we'll tune your alerts to match."};
+  }
+
+  /* ---------- state ---------- */
+  var state={ name:"", answers:{}, ptr:0, plan:"pro_m" };
+  var screens={intro:el('s-intro'),flow:el('s-flow'),analyze:el('s-analyze'),profile:el('s-profile'),email:el('s-email'),subs:el('s-subs'),confirm:el('s-confirm')};
+  function show(n){ for(var k in screens){ screens[k].classList.toggle('on',k===n);} window.scrollTo(0,0); }
+  function qSeen(){ var c=0; for(var i=0;i<=state.ptr && i<STEPS.length;i++){ if(STEPS[i].kind==="q") c++; } return c; }
+  function setBar(){ var q=Math.max(0,qSeen()-1); el('bar').style.transform='scaleX('+Math.min(1,q/TOTAL_Q)+')'; }
+
+  /* ---------- render step ---------- */
+  function renderStep(){
+    var step=STEPS[state.ptr];
+    el('back').style.visibility='visible';
+    if(step.kind==="insight"){ renderInsight(step.build(withName(state.answers))); return; }
+    var d=step.def, a=withName(state.answers);
+    var qn=qSeen();
+    el('qcount').textContent='Question '+qn+' / '+TOTAL_Q;
+    var body=el('flowbody');
+    var sub = d.subFn?d.subFn(a):(d.sub||'');
+    body.innerHTML='<div class="q">'+d.q+'</div>'+(sub?'<div class="qsub">'+sub+'</div>':'')+'<div class="opts" id="opts"></div>';
+    var wrap=el('opts'); var chosen=state.answers[d.key]||(d.multi?[]:null);
+    d.options.forEach(function(o){
+      var b=document.createElement('button'); b.className='opt'; b.type='button';
+      var isSel=d.multi?chosen.indexOf(o.value)>-1:chosen===o.value; if(isSel)b.classList.add('sel');
+      b.innerHTML='<span class="em">'+o.em+'</span><span class="ol">'+o.label+'</span><span class="ck"></span>';
+      b.addEventListener('click',function(){ pick(d,o.value); });
+      wrap.appendChild(b);
+    });
+    var c=el('flowCont');
+    if(d.multi){ c.style.display='block'; c.textContent='Continue →'; c.disabled=!(chosen&&chosen.length); c.onclick=next; }
+    else c.style.display='none';
+    setBar(); show('flow');
+  }
+  function renderInsight(o){
+    el('qcount').textContent='';
+    var html='<span class="eyebrow" style="margin-bottom:14px">Insight</span>';
+    if(o.big) html+='<div class="bignum">'+o.big+'</div>';
+    html+='<div class="q" style="margin-bottom:10px">'+o.h+'</div>';
+    if(o.quote) html+='<div class="proof"><div class="av">“</div><div><div class="pt"><b>'+o.quote+'</b></div><div class="ph mono">'+o.who+'</div></div></div>';
+    if(o.p) html+='<div class="qsub" style="margin-bottom:0">'+o.p+'</div>';
+    el('flowbody').innerHTML=html;
+    var c=el('flowCont'); c.style.display='block'; c.textContent='Keep going →'; c.disabled=false; c.onclick=next;
+    setBar(); show('flow');
+  }
+  function pick(d,val){
+    if(d.multi){ var arr=state.answers[d.key]||[]; var ix=arr.indexOf(val); if(ix>-1)arr.splice(ix,1); else arr.push(val); state.answers[d.key]=arr; renderStep(); }
+    else { state.answers[d.key]=val; renderStep(); setTimeout(next,210); }
+  }
+  function next(){ if(state.ptr<STEPS.length-1){ state.ptr++; renderStep(); } else runAnalyze(); }
+  function withName(a){ var c=Object.assign({},a); c.name=state.name; return c; }
+
+  el('back').addEventListener('click',function(){
+    if(screens.flow.classList.contains('on')){ if(state.ptr===0){ el('back').style.visibility='hidden'; show('intro'); } else { state.ptr--; renderStep(); } }
+    else if(screens.profile.classList.contains('on')){ state.ptr=STEPS.length-1; renderStep(); }
+    else if(screens.email.classList.contains('on')){ buildProfile(); }
+    else if(screens.subs.classList.contains('on')){ show('email'); }
+  });
+
+  el('start').addEventListener('click',function(){ el('back').style.visibility='visible'; state.ptr=0; renderStep(); });
+
+  /* ---------- analyzing ---------- */
+  function runAnalyze(){
+    el('bar').style.transform='scaleX(1)';
+    var a=withName(state.answers);
+    el('anHead').textContent = "Building your world feed…";
+    var doms=(a.domains&&a.domains.length)?a.domains:["news"];
+    var reg=(a.regions&&a.regions[0])?regionWord(a.regions[0]):"the globe";
+    var rows=[ "Wiring up "+doms.length+" topics you picked",
+               "Zooming the map to "+reg,
+               "Setting your pace · "+cadence(a.speed),
+               "Teaching the AI what you care about",
+               "Plating up your feed ✨" ];
+    var box=el('alog'); box.innerHTML=rows.map(function(r){return '<div><span class="ok">▸</span><span>'+r+'</span></div>';}).join('');
+    var kids=box.children; for(var i=0;i<kids.length;i++)kids[i].classList.remove('on');
+    var n=0; (function stp(){ if(n<kids.length){ kids[n].classList.add('on'); n++; setTimeout(stp,480);} })();
+    show('analyze');
+    setTimeout(buildProfile, 2700);
+  }
+
+  /* ---------- profile ---------- */
+  function isPro(a){ return a.speed==="moment"||a.use==="api"||a.today==="terminal"||a.goal==="markets"||a.goal==="hype"||a.team==="org"||a.stakes==="money"||a.stakes==="safety"; }
+  function buildProfile(){
+    var a=withName(state.answers);
+    var roleHead={investor:"Your money & markets watch.",traveler:"Your travel-safety radar.",follower:"Your clear view of the world.",biz:"Your business early-warning.",curious:"Your window on the world."};
+    el('pHead').innerHTML=(a.name?a.name+" — ":"")+(roleHead[a.role]||"Your World Monitor setup.");
+    el('pLede').innerHTML="Tuned for <b>"+cadence(a.speed).toLowerCase()+"</b> across the signals you chose. Here's what we built.";
+
+    var chips=el('pChips'); chips.innerHTML='';
+    function chip(k,v){ var s=document.createElement('span'); s.className='pchip'; s.innerHTML='<b>'+k+'</b>'+v; chips.appendChild(s); }
+    if(a.role) chip('Role', roleWord(a.role));
+    if(a.regions&&a.regions.length) chip('Focus', a.regions.map(regionWord).slice(0,2).join(', ')+(a.regions.length>2?' +'+(a.regions.length-2):''));
+    chip('Cadence', cadence(a.speed));
+    if(a.level) chip('Onboarding', {new:"guided",some:"standard",pro:"expert"}[a.level]);
+
+    var doms=(a.domains&&a.domains.length)?a.domains.slice():[];
+    if(!doms.length) doms=[a.goal==="markets"?"market":a.goal==="hype"?"crypto":a.goal==="security"?"maritime":"news"];
+    if(a.goal==="hype"){ if(doms.indexOf("crypto")<0)doms.unshift("crypto"); if(doms.indexOf("ai")<0)doms.push("ai"); }
+    if(a.role==="investor"&&doms.indexOf("market")<0) doms.push("market");
+    doms=doms.filter(function(v,i,s){return s.indexOf(v)===i;}).slice(0,5);
+    var lw=el('pLayers'); lw.innerHTML='';
+    doms.forEach(function(dn){ var L=LAYERS[dn]||LAYERS.news; var row=document.createElement('div'); row.className='layer';
+      row.innerHTML='<span class="em">'+L.em+'</span><span class="lx">'+L.label+'</span><span class="tag">'+L.tag+'</span>'; lw.appendChild(row); });
+    el('pLayerCount').textContent=doms.length+' active';
+
+    el('pWatch').innerHTML=
+      '<div class="wcell"><div class="k">Est. lead time</div><div class="v">'+leadTime(a)+'</div></div>'+
+      '<div class="wcell"><div class="k">Alert mode</div><div class="v" style="font-size:14px">'+({critical:"Critical only",all:"Everything",brief:"Curated brief"}[a.alerts]||"Balanced")+'</div></div>';
+
+    show('profile');
+  }
+  el('pCont').addEventListener('click',function(){
+    var a=withName(state.answers);
+    el('eHead').innerHTML=a.name?("Save your watch, "+a.name+"."):"Save your watch.";
+    show('email'); setTimeout(function(){el('emailInput').focus();},60);
+  });
+
+  /* ---------- email ---------- */
+  function validEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }
+  el('emailCont').addEventListener('click',function(){
+    var v=(el('emailInput').value||'').trim();
+    if(!validEmail(v)){ el('emailErr').classList.add('on'); el('emailInput').focus(); return; }
+    el('emailErr').classList.remove('on'); state.email=v; buildSubs();
+  });
+  el('emailInput').addEventListener('input',function(){ el('emailErr').classList.remove('on'); });
+  el('emailInput').addEventListener('keydown',function(e){ if(e.key==='Enter') el('emailCont').click(); });
+
+  /* ---------- subscription ---------- */
+  function buildSubs(){
+    var a=withName(state.answers);
+    el('sHead').textContent="Start your feed.";
+    el('sLede').textContent="Full access to crypto, AI, markets & world alerts. Pick your pace — cancel anytime.";
+    var plans=[
+      {id:"weekly", nm:"Weekly", amt:"$2.99", per:"/week", d:"Everything unlocked. Try it for the price of a coffee."},
+      {id:"yearly", nm:"Yearly", amt:"$49.99", per:"/year", d:"Everything unlocked, plus AI summaries. Just ~$4/mo.", rec:true, save:"Save 48%"},
+      {id:"monthly", nm:"Monthly", amt:"$7.99", per:"/month", d:"Everything unlocked, billed monthly."}
+    ];
+    state.plan="yearly";
+    var list=el('planList'); list.innerHTML='';
+    plans.forEach(function(p){
+      var d=document.createElement('div'); d.className='plan'+(state.plan===p.id?' sel':''); d.dataset.id=p.id;
+      d.innerHTML=(p.rec?'<span class="rec">Recommended for you</span>':'')+
+        '<div class="ph"><span class="pnm">'+p.nm+'</span>'+(p.save?'<span class="save">'+p.save+'</span>':'')+'<span class="amt">'+p.amt+'<small>'+p.per+'</small></span></div>'+
+        '<div class="pd">'+p.d+'</div>';
+      d.addEventListener('click',function(){ state.plan=p.id; [].forEach.call(list.children,function(c){c.classList.toggle('sel',c.dataset.id===p.id);}); updateSubCta(); });
+      list.appendChild(d);
+    });
+    updateSubCta(); show('subs');
+  }
+  function updateSubCta(){ var m={weekly:"Weekly",monthly:"Monthly",yearly:"Yearly"}; el('subCont').textContent = state.plan==="free" ? "Continue with Free →" : "Start "+(m[state.plan]||"Pro")+" →"; }
+  el('subCont').addEventListener('click', buildConfirm);
+  el('subFree').addEventListener('click',function(){ state.plan="free"; buildConfirm(); });
+
+  /* ---------- confirm ---------- */
+  function buildConfirm(){
+    var a=withName(state.answers); var free=state.plan==="free";
+    el('cHead').innerHTML=(a.name?a.name+", ":"")+(free?"your feed is live.":"you're in 🎉");
+    el('cLede').innerHTML= free
+      ? "Your feed is ready and we've sent the setup to <b>"+esc(state.email)+"</b>."
+      : "We'll open secure checkout for your <b>"+({weekly:"Weekly",monthly:"Monthly",yearly:"Yearly"}[state.plan]||"Pro")+"</b> plan, then your feed is live — confirmation to <b>"+esc(state.email)+"</b>.";
+    var doms=(a.domains&&a.domains.length)?a.domains.length:1;
+    el('cSummary').innerHTML='<h3>Your feed <span style="color:var(--dim)">'+cadence(a.speed)+'</span></h3>'+
+      '<div class="layer"><span class="em">🗺️</span><span class="lx">'+(a.regions&&a.regions.length?a.regions.map(regionWord).slice(0,2).join(', '):"Global")+'</span><span class="tag">'+doms+' layers</span></div>'+
+      '<div class="layer"><span class="em">🔔</span><span class="lx">'+({critical:"Critical alerts only",all:"Full firehose",brief:"Curated brief"}[a.alerts]||"Balanced alerts")+'</span><span class="tag">'+leadTime(a)+' lead</span></div>';
+    var cta=el('cCta'); cta.setAttribute('target','_blank'); cta.setAttribute('rel','noopener');
+    if(free){
+      cta.textContent="Launch the dashboard →"; cta.setAttribute('href', DASHBOARD_URL||'#');
+      el('cFine').textContent="Upgrade anytime from your dashboard.";
+    } else {
+      cta.textContent="Continue to secure checkout →";
+      var base=STRIPE[state.plan]||'#', url=base;
+      if(state.email && base.indexOf('http')===0){ url=base+(base.indexOf('?')<0?'?':'&')+'prefilled_email='+encodeURIComponent(state.email); }
+      cta.setAttribute('href', url);
+      el('cFine').textContent="You'll continue to secure Stripe checkout · "+({weekly:"$2.99/week",monthly:"$7.99/month",yearly:"$49.99/year"}[state.plan]||"");
+    }
+    show('confirm');
+  }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  el('restart').addEventListener('click',function(){ state={name:"",answers:{},ptr:0,plan:"pro_m"}; el('emailInput').value=''; el('bar').style.transform='scaleX(0)'; el('back').style.visibility='hidden'; show('intro'); });
+
+  /* ---- checkout: backend Checkout Session (with Payment Link fallback) ---- */
+  el('cCta').addEventListener('click',function(ev){
+    if(state.plan==='free') return;                 // free → link goes to the dashboard
+    if(CHECKOUT_MODE==='backend'){ ev.preventDefault(); backendCheckout(); }
+  });
+  function backendCheckout(){
+    var cta=el('cCta'), prev=cta.textContent; cta.textContent='Opening checkout…';
+    fetch(BACKEND_URL.replace(/\/+$/,'')+'/api/create-checkout-session',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plan:state.plan, email:state.email})
+    }).then(function(r){return r.json();})
+      .then(function(d){ if(d&&d.url){ window.location.href=d.url; } else { throw new Error('no url'); } })
+      .catch(function(){ cta.textContent=prev; var b=STRIPE[state.plan]; if(b&&b.indexOf('http')===0){ window.open(b,'_blank','noopener'); } });
+  }
+
+  /* ---------- theme ---------- */
+  var root=document.documentElement, tgl=el('tgl');
+  function applyT(t){ root.setAttribute('data-theme',t); tgl.textContent=t==='light'?'☀':'☾'; try{localStorage.setItem('wm-theme',t);}catch(e){} }
+  var saved=null; try{saved=localStorage.getItem('wm-theme');}catch(e){}
+  if(saved) applyT(saved);
+  else { root.setAttribute('data-theme','dark'); tgl.textContent='☾'; }
+  tgl.addEventListener('click',function(){ applyT(root.getAttribute('data-theme')==='light'?'dark':'light'); });
+})();
+</script>

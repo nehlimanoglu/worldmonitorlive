@@ -1,0 +1,21 @@
+# Render blueprint — deploy in ~2 clicks:
+# 1. push this folder to a GitHub repo
+# 2. Render → New → Blueprint → pick the repo
+# 3. add CRYPTOPANIC_TOKEN / FINNHUB_TOKEN in the dashboard (optional), set ALLOWED_ORIGINS
+services:
+  - type: web
+    name: worldmonitor-news
+    runtime: node
+    plan: free            # note: free web services sleep when idle — SSE reconnects on wake
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: "*"        # tighten to https://www.worldmonitor.app for production
+      - key: USGS_MIN_MAG
+        value: "2.5"
+      - key: CRYPTOPANIC_TOKEN
+        sync: false       # set in dashboard (optional)
+      - key: FINNHUB_TOKEN
+        sync: false       # set in dashboard (optional)
