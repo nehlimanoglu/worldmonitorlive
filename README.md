@@ -21,3 +21,5 @@ Import this repo in Vercel → **Root Directory: `site`** → Deploy → add dom
 
 ## Backend
 Ingestion runs entirely inside Supabase (Edge Function + pg_cron). See SUPABASE-SETUP.md.
+
+# worldmonitorlive.app
